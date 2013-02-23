@@ -1,8 +1,8 @@
 var socketId;
 
 chrome.socket.create('tcp', {}, function onSocketCreate(createInfo) {
-	socketId = createInfo.socketId;
-	chrome.socket.connect(socketId, '10.0.0.30', 6667, onConnected);
+  socketId = createInfo.socketId;
+  chrome.socket.connect(socketId, '10.0.0.30', 6667, onConnected);
 });
 
 function onConnected() {
@@ -11,11 +11,9 @@ function onConnected() {
   write('PASS none\r\n');
   write('NICK USER\r\n');
   write('USER USER 0 * :Real Name\r\n', function() {
-  readForever();
-  write('JOIN #realtestchannel\r\n'); //This is broken. We should wait till the server acks the nick registration before joining.
+    readForever();
+    write('JOIN #realtestchannel\r\n'); //This is broken. We should wait till the server acks the nick registration before joining.
   });
-  
-
 }
 
 function write(s, f) {
@@ -44,9 +42,8 @@ function read() {
 }
 
 function readForever(readInfo) {
-	if (readInfo != undefined && readInfo.resultCode != undefined && readInfo.resultCode > 0) {
-		console.log(ab2str(readInfo.data));
-	}
-  chrome.socket.read(socketId, null, this.readForever.bind(this));
+  if (readInfo != undefined && readInfo.resultCode != undefined && readInfo.resultCode > 0) {
+    console.log(ab2str(readInfo.data));
+  }
+  chrome.socket.read(socketId, null, readForever);
 }
-
