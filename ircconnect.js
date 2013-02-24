@@ -11,23 +11,24 @@ chrome.socket.create('tcp', {}, function onSocketCreate(createInfo) {
 });
 //console.log("onConnected is done. ReadForever is next");
 
-function onConnected() {
+function onConnected()
+{
   readForever();
   console.log(socketId);
   read();
   write('PASS none');
   write('NICK OptimistBot');
-  write('USER USER 0 * :Real Name', function() {
+  write('USER USER 0 * :Real Name', function()
+  {
     //wait for a sign that we're registered before joining.
     //Welcome to the Internet Relay Network -RPL_WELCOME via IRC RFCs
     //socket.listen is not  an option for client side connections. let's try reading until we get what we want
     var welcomeMsg="";
-    var dateread = new Date();
-    console.log(dateread+": Wrote after USER\r\n");
-    
-  //write('JOIN #realtestchannel\r\n');
-  
-})//end write
+    var dateRead = new Date();
+    console.log(dateRead+": Wrote after USER\r\n");
+
+    //write('JOIN #realtestchannel\r\n');
+  })//end write
 }
 
 function write(s, f) {
@@ -36,50 +37,57 @@ function write(s, f) {
   chrome.socket.write(socketId, str2ab(s), function(good) {console.log('write was ', good); if (f) f();});
 }
 
-function str2ab(str) {
+function str2ab(str)
+{
   var buf = new ArrayBuffer(str.length*1); // 1 byte for each char
   var bufView = new Uint8Array(buf);
-  for (var i=0, strLen=str.length; i<strLen; i++) {
+  for (var i=0, strLen=str.length; i<strLen; i++)
+  {
     bufView[i] = str.charCodeAt(i);
   }
   return buf;
 }
 
-function ab2str(buf) {
+function ab2str(buf)
+{
   return String.fromCharCode.apply(null, new Uint8Array(buf));
 }
 
-function read() {
+function read()
+{
   chrome.socket.read(socketId, null, function(readInfo) {
     if (readInfo.resultCode > 0) {
-      var dateread = new Date();
-      console.log(dateread + ab2str(readInfo.data));
-      dataFromRead+=dateread.getTime()+ab2str(readInfo.data)+"/r/n";
+      var dateRead = new Date();
+      console.log(dateRead + ab2str(readInfo.data));
+      dataFromRead+=dateRead.getTime()+ab2str(readInfo.data)+"/r/n";
     }
   });
+
 }//end read
-function readForever(readInfo){
+
+function readForever(readInfo)
+{
   if(readInfo!==undefined && readInfo.resultCode>0)
   {
-    var dateread = new Date();
-    var servermsg = ab2str(readInfo.data);
-    console.log(dateread + ab2str(readInfo.data));
-    dataFromRead+=dateread.getTime()+ab2str(readInfo.data)+"/r/n";
-    //if trigger matches data, do stuff here. 
- 
+    var dateRead = new Date();
+    var serverMsg = ab2str(readInfo.data);
+    console.log(dateRead + ab2str(readInfo.data));
+    dataFromRead+=dateRead.getTime()+ab2str(readInfo.data)+"/r/n";
+    //if trigger matches data, do stuff here.
+
     //get server name
     if(!serverName)
     {
-      serverName = servermsg.substring(1,servermsg.search(' '));
+      serverName = serverMsg.substring(1,serverMsg.search(' '));
     }
     //if we get the welcome msg, join channel
-    if (servermsg.search("001 OptimistBot :")!=-1)
+    if (serverMsg.search("001 OptimistBot :")!=-1)
     {
-      console.log(servermsg.search("001 OptimistBot :"));
+      console.log(serverMsg.search("001 OptimistBot :"));
       write('JOIN '+channelName);
-    } 
-    //if PING, PONG 
-    if(servermsg.search("PING :")===0) //todo, only do this if its from server. not said in privmsg or channel. 
+    }
+    //if PING, PONG
+    if(serverMsg.search("PING :")===0) //todo, only do this if its from server. not said in privmsg or channel.
     {
       if(serverName)
       {
@@ -90,9 +98,9 @@ function readForever(readInfo){
     //if MSG, respond
 
     //if channel message =5 and last date spoken is >5 minutes ago, say something
-    //if msg !stfu x, be silent for x minutes. 
+    //if msg !stfu x, be silent for x minutes.
   }
-  
+
   chrome.socket.read(socketId, null, readForever); //On Peter's advice changing this to just call itself
 
 }//end readForever
