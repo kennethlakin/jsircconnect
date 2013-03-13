@@ -13,11 +13,11 @@ function IrcCommand() {
 //onRead(readInfo)
 //onWritten(writeInfo)
 //onWrite(data)
-function IrcClient(serverName, serverPort, nick, channel) {
+function IrcClient(serverName, serverPort, defaultNick, channel) {
 	this.serverName = serverName;
 	this.serverPort = serverPort;
 	this.channel = channel;
-	this.retrieveUserName(nick);
+	this.retrieveUserName(defaultNick);
 	this.socketId;
 };
 
@@ -46,7 +46,7 @@ IrcClient.crackMessage = function(serverLine) {
 	var offset = 0;
 
 	//If our message had a prefix, store it.
-	if(parts[0][0] == ":" )
+	if(parts[0].charAt(0) == ":" )
 	{
 		r.prefix = parts[0];
 		offset = 1;
