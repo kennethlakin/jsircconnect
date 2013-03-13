@@ -1,47 +1,45 @@
-var socketId;
-var serverConnect = "chat.freenode.net";
-var ircPort = 6667;
-var serverName;
-var channelName ="#realtestchannel";
-var userName = "LakinBot";
-var timeOfLastChanMsg = new Date();
-timeOfLastChanMsg.setTime(1); //initialize the time to 1.
-var silentTimeMin=.5;
-
-var client = new IrcClient(serverConnect, ircPort, userName, channelName);
+var OptimistBot = {
+   serverConnect : "wright.freenode.net",
+   ircPort : 6667,
+   userName : "LakinBot",
+   channelName :"#realtestchannel",
+   client : undefined,
+   socketId : undefined,
+   timeOfLastChanMsg : new Date(),
+   silentTimeMin:0.5,
 
 
-//OptimistBot Sayings
-var goodVibes = ["Great job team!","Wow! I can't believe how much headway we're making!",
-"That's a great point! Let's explore this perspective with bit more dicussion. ",
-"Keep up the great work team! This discussion is fascinating!",
-"This is very encouraging. We are reaching our goals by talking things out.",
-"All of these are great ideas! Let's keep going and get everyone's contribution.",
-"Congratulations team! Great work so far!",
-"Thanks for mentioning that. That's a perspective I've never thought about before.",
-"All right! Fantastic point!",
-"Just wanted to throw in my two cents- you're all doing a dynamite job here!",
-"That's one thing I love about this channel- the truly diverse ideas being discussed. Great job!",
-"I like that. Let's brainstorm some more on this idea.",
-];
+  //OptimistBot Sayings
+   goodVibes : ["Great job team!","Wow! I can't believe how much headway we're making!",
+      "That's a great point! Let's explore this perspective with bit more dicussion. ",
+      "Keep up the great work team! This discussion is fascinating!",
+      "This is very encouraging. We are reaching our goals by talking things out.",
+      "All of these are great ideas! Let's keep going and get everyone's contribution.",
+      "Congratulations team! Great work so far!",
+      "Thanks for mentioning that. That's a perspective I've never thought about before.",
+      "All right! Fantastic point!",
+      "Just wanted to throw in my two cents- you're all doing a dynamite job here!",
+      "That's one thing I love about this channel- the truly diverse ideas being discussed. Great job!",
+      "I like that. Let's brainstorm some more on this idea."
+      ]
+};
 
 
-function IrcCommand() {
-  this.prefix = "";
-  this.command = "";
-  this.username = "";
-  this.args = [];
-}
 
-function main () {
-  client.onConnect = onConnected;
-  client.onDisconnect = onDisconnected;
-  client.onMessages = handleOptimistMessages;
-  client.onRead = read;
-  client.onWritten = onWritten;
-  client.onWrite = onWrite;
+OptimistBot.main  = function() {
+  OptimistBot.client = new IrcClient(
+      OptimistBot.serverConnect, OptimistBot.ircPort, 
+      OptimistBot.userName, OptimistBot.channelName)
 
-  client.connect();
+  OptimistBot.timeOfLastChanMsg.setTime(1), //initialize the time to 1.
+  OptimistBot.client.onConnect = OptimistBot.onConnected;
+  OptimistBot.client.onDisconnect = OptimistBot.onDisconnected;
+  OptimistBot.client.onMessages = OptimistBot.handleOptimistMessages;
+  OptimistBot.client.onRead = OptimistBot.read;
+  OptimistBot.client.onWritten = OptimistBot.onWritten;
+  OptimistBot.client.onWrite = OptimistBot.onWrite;
+
+  OptimistBot.client.connect();
   var inputElement = document.getElementById('typing');
   if(inputElement) {
     inputElement.addEventListener('keydown', function (event)
@@ -51,35 +49,35 @@ function main () {
       {
         var message = inputElement.value;
         inputElement.value = "";
-        client.write("PRIVMSG " + channelName + " :" + message);
+        OptimistBot.client.write("PRIVMSG " + OptimistBot.channelName + " :" + message);
       }
     });
   }
 };
 
 
-function onConnected()
+OptimistBot.onConnected = function()
 {
   document.getElementById('connectionStatus').textContent = "connected!";
 } // end onConnected
 
-function onDisconnected()
+OptimistBot.onDisconnected = function()
 {
   document.getElementById('connectionStatus').textContent = "disconnected :(";
 } // end onDisconnected
 
-function onWrite(s)
+OptimistBot.onWrite = function(s)
 {
   console.log(s);
-  displayLineToScreen("[sending] " + s);
+  OptimistBot.displayLineToScreen("[sending] " + s);
 }//end write
 
-function read(readInfo)
+OptimistBot.read = function(readInfo)
 {
   console.log(new Date() + IrcClient.ab2str(readInfo.data));
 }//end read
 
-function onWritten(one, two)
+OptimistBot.onWritten = function(one, two)
 {
   if(two) {
     console.log('write was ', two); 
@@ -92,7 +90,7 @@ function onWritten(one, two)
   }
 }
 
-function handleOptimistMessages(serverMessages) {
+OptimistBot.handleOptimistMessages = function(serverMessages) {
   for(var i = 0; i < serverMessages.length; ++i)
   {
     var m = serverMessages[i];
@@ -101,14 +99,14 @@ function handleOptimistMessages(serverMessages) {
     {
       //Welcome message!
       case "001":
-        client.joinChannel(channelName);
+        OptimistBot.client.joinChannel(OptimistBot.channelName);
         break;
       case "PING":
-        client.pong(m);
-        displayLineToScreen('[SERVER PONG]');
+        OptimistBot.client.pong(m);
+        OptimistBot.displayLineToScreen('[SERVER PONG]');
         break;
       case "PRIVMSG":
-        handlePrivmsg(m);
+        OptimistBot.handlePrivmsg(m);
         break;
       default:
         //All this spew is a bit annoying.
@@ -118,9 +116,10 @@ function handleOptimistMessages(serverMessages) {
   }
 }
 
-function handlePrivmsg(message) {
+OptimistBot.handlePrivmsg = function(message) {
+  var text;
   //This is a message to the channel:
-  if(message.username === channelName)
+  if(message.username === OptimistBot.channelName)
   {
     for(var i = 0; i < message.args.length; ++i)
     {
@@ -132,10 +131,10 @@ function handlePrivmsg(message) {
         arg = arg.substring(1);
       }
       //If someone has mentioned us, speak back.
-      if(arg.search(userName) != -1)
+      if(arg.search(OptimistBot.userName) != -1)
       {
-        var text = "I LIKE RAINBOWS?";
-        sendPrivmsg(channelName, text);
+        text = "I LIKE RAINBOWS?";
+        OptimistBot.sendPrivmsg(OptimistBot.channelName, text);
       }
     }
   }
@@ -143,33 +142,33 @@ function handlePrivmsg(message) {
   else
   {
     var messagingUser = message.prefix.slice(1, message.prefix.search("!"));
-    var text = "I LIKE RAINBOWS!?";
-    sendPrivmsg(messagingUser, text);
+    text = "I LIKE RAINBOWS!?";
+    OptimistBot.sendPrivmsg(messagingUser, text);
   }
 }
 
-function sendPrivmsg(reciever, message) {
+OptimistBot.sendPrivmsg = function(reciever, message) {
   var dateObj = new Date();
-  if(reciever != channelName) {
-    client.sendPrivmsg(reciever, message);
+  if(reciever != OptimistBot.channelName) {
+    OptimistBot.client.sendPrivmsg(reciever, message);
   }
-  else if (dateObj.getTime()-timeOfLastChanMsg.getTime()>silentTimeMin*60000)
+  else if (dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime()>OptimistBot.silentTimeMin*60000)
   {
-    timeOfLastChanMsg.setTime(dateObj.getTime());
-    client.sendPrivmsg(reciever, message);
+    OptimistBot.timeOfLastChanMsg.setTime(dateObj.getTime());
+    OptimistBot.client.sendPrivmsg(reciever, message);
   }
   else
   {
     console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
     console.log(dateObj.getTime());
     console.log("Time of timeOfLastChanMsg")
-    console.log(timeOfLastChanMsg.getTime());
-    console.log(dateObj.getTime()-timeOfLastChanMsg.getTime())
-    console.log(dateObj.getTime()-timeOfLastChanMsg.getTime()<silentTimeMin*60000)
+    console.log(OptimistBot.timeOfLastChanMsg.getTime());
+    console.log(dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime())
+    console.log(dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime()<OptimistBot.silentTimeMin*60000)
   }
 }
 
-function displayLineToScreen(text)
+OptimistBot.displayLineToScreen = function(text)
 {
   var p = document.createElement('pre');
   p.textContent = text;
@@ -182,5 +181,6 @@ function displayLineToScreen(text)
 }
 
 if(IrcClient.runningInChrome()) {
-  main();
+  OptimistBot.main();
 }
+
