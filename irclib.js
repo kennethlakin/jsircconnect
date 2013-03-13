@@ -17,11 +17,11 @@ function IrcClient(serverName, serverPort, nick, channel) {
 	this.serverName = serverName;
 	this.serverPort = serverPort;
 	this.channel = channel;
-	this.getUserName(this, nick);
+	this.retrieveUserName(nick);
 	this.socketId;
 };
 
-IrcClient.prototype.str2ab = function(str) {
+IrcClient.str2ab = function(str) {
   var buf = new ArrayBuffer(str.length*1); // 1 byte for each char
   var bufView = new Uint8Array(buf);
   for (var i=0, strLen=str.length; i<strLen; i++)
@@ -31,8 +31,30 @@ IrcClient.prototype.str2ab = function(str) {
   return buf;
 }
 
-IrcClient.prototype.ab2str = function(buf) {
+IrcClient.ab2str = function(buf) {
   return String.fromCharCode.apply(null, new Uint8Array(buf));
+}
+
+//Converts a single message from an IRC server into an IrcCommand object.
+IrcClient.crackMessage = function(serverLine) {
+	if(serverLine.length == 0)
+	{
+		return undefined;
+	}
+	var r = new IrcCommand();
+	var parts = serverLine.split(" ");
+	var offset = 0;
+
+	//If our message had a prefix, store it.
+	if(parts[0][0] == ":" )
+	{
+		r.prefix = parts[0];
+		offset = 1;
+	}
+	r.command = parts[0+offset];
+	r.username = parts[1+offset];
+	r.args = parts.slice(2+offset);
+	return r;
 }
 
 IrcClient.prototype.write = function(s, f) {
@@ -45,7 +67,7 @@ IrcClient.prototype.write = function(s, f) {
 		w = self.onWritten.bind(self, f);
 	}
   s+="\r\n";
-	chrome.socket.write(self.socketId, self.str2ab(s), w);
+	chrome.socket.write(self.socketId, IrcClient.str2ab(s), w);
 }
 
 IrcClient.prototype.connect = function() {
@@ -74,7 +96,7 @@ IrcClient.prototype.pong = function(serverMessage) {
 		self.write("PONG :"+ serverMessage.username.substring(1));
 	} 
 	else {
-		throw "Error: No message passed to pong.";
+		throw new Error("Error: No message passed to pong.");
 	}
 }
 
@@ -88,7 +110,7 @@ IrcClient.prototype.joinChannel = function(channelName) {
 			self.write('JOIN' + self.channel);
 		}
 		else {
-			throw "joinChannel: No channelName passed in and no default channel defined!";
+			throw new Error("joinChannel: No channelName passed in and no default channel defined!");
 		}
 	}
 }
@@ -106,7 +128,7 @@ IrcClient.prototype.sendPrivmsg = function (reciever, message) {
 		if(!message) {
 			except += "message unspecified. ";
 		}
-		throw except;
+		throw new Error(except);
 	}
 }
 
@@ -128,7 +150,7 @@ IrcClient.prototype.readForever = function(readInfo)
 		if(self.onRead) {
 			self.onRead(readInfo);
 		}
-    var serverMsg = self.ab2str(readInfo.data);
+    var serverMsg = IrcClient.ab2str(readInfo.data);
 
     var serverLines = [];
     var serverMessages = [];
@@ -138,7 +160,7 @@ IrcClient.prototype.readForever = function(readInfo)
     for(var i = 0; i < serverLines.length; i++)
     {
       //If the line wasn't empty, save the message.
-      var msg = self.crackMessage(serverLines[i]);
+      var msg = IrcClient.crackMessage(serverLines[i]);
       if(msg !== undefined)
       {
         serverMessages.push(msg);
@@ -159,28 +181,6 @@ IrcClient.prototype.onDisconnected = function(resultCode)
   chrome.socket.disconnect(self.socketId);
 } // end onDisconnected
 
-//Converts a single message from an IRC server into an IrcCommand object.
-IrcClient.prototype.crackMessage = function(serverLine) {
-	if(serverLine.length == 0)
-	{
-		return undefined;
-	}
-	var r = new IrcCommand();
-	var parts = serverLine.split(" ");
-	var offset = 0;
-
-	//If our message had a prefix, store it.
-	if(parts[0][0] == ":" )
-	{
-		r.prefix = parts[0];
-		offset = 1;
-	}
-	r.command = parts[0+offset];
-	r.username = parts[1+offset];
-	r.args = parts.slice(2+offset);
-	return r;
-}
-
 IrcClient.prototype.setUserName = function(newUserName, optionalCallback)
 {
 	var self = this;
@@ -192,17 +192,15 @@ IrcClient.prototype.setUserName = function(newUserName, optionalCallback)
 	}
 } // end setUserName
 
-IrcClient.prototype.getUserName = function(ircClient, defaultUsername) {
+IrcClient.prototype.retrieveUserName = function(defaultUsername) {
 	var self = this;
 	if(self.runningInChrome()) {
-		chrome.storage.local.get('userName', function(results)
-		{
-			ircClient.nick = results.userName || defaultUsername;
-
+		chrome.storage.local.get('userName', function(results) {
+			self.nick = results.userName || defaultUsername;
 		}); // end get userName from storage
 	}
 	else {
-		ircClient.nick = defaultUsername;
+		self.nick = defaultUsername;
 	}
 }
 //@returns true if we're both running in an browser, and running under Google

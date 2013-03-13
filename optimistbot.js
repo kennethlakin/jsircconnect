@@ -75,7 +75,7 @@ function onWrite(s)
 
 function read(readInfo)
 {
-	console.log(new Date() + client.ab2str(readInfo.data));
+	console.log(new Date() + IrcClient.ab2str(readInfo.data));
 }//end read
 
 function onWritten(one, two)
