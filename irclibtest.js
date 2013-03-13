@@ -54,6 +54,8 @@ describe("IrcClient tests", function() {
   }) //End "Throws on various errors suite"
   describe("Various read/write operations", function() {
     var c;
+    //We're not running as an extension, so we need to stub
+    //out the Socket API.
     chrome.socket = { 
       connect: function() {;},
       create: function() {;},
