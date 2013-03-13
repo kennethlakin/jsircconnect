@@ -14,11 +14,11 @@ function IrcCommand() {
 //onWritten(writeInfo)
 //onWrite(data)
 function IrcClient(serverName, serverPort, defaultNick, channel) {
-	this.serverName = serverName;
-	this.serverPort = serverPort;
-	this.channel = channel;
-	this.retrieveUserName(defaultNick);
-	this.socketId;
+  this.serverName = serverName;
+  this.serverPort = serverPort;
+  this.channel = channel;
+  this.retrieveUserName(defaultNick);
+  this.socketId;
 };
 
 IrcClient.str2ab = function(str) {
@@ -37,55 +37,55 @@ IrcClient.ab2str = function(buf) {
 
 //Converts a single message from an IRC server into an IrcCommand object.
 IrcClient.crackMessage = function(serverLine) {
-	if(serverLine.length === 0)
-	{
-		return undefined;
-	}
-	var r = new IrcCommand();
-	var parts = serverLine.split(" ");
-	var offset = 0;
+  if(serverLine.length === 0)
+  {
+  	return undefined;
+  }
+  var r = new IrcCommand();
+  var parts = serverLine.split(" ");
+  var offset = 0;
 
-	//If our message had a prefix, store it.
-	if(parts[0].charAt(0) == ":" )
-	{
-		r.prefix = parts[0];
-		offset = 1;
-	}
-	r.command = parts[0+offset];
-	r.username = parts[1+offset];
-	r.args = parts.slice(2+offset);
-	return r;
+  //If our message had a prefix, store it.
+  if(parts[0].charAt(0) == ":" )
+  {
+  	r.prefix = parts[0];
+  	offset = 1;
+  }
+  r.command = parts[0+offset];
+  r.username = parts[1+offset];
+  r.args = parts.slice(2+offset);
+  return r;
 }
 
 IrcClient.prototype.write = function(s, f) {
-	var self = this;
-	var w;
-	if(self.onWrite) {
-		self.onWrite(s);
-	}
-	if(self.onWritten) {
-		w = self.onWritten.bind(self, f);
-	}
+  var self = this;
+  var w;
+  if(self.onWrite) {
+  	self.onWrite(s);
+  }
+  if(self.onWritten) {
+  	w = self.onWritten.bind(self, f);
+  }
   s+="\r\n";
-	chrome.socket.write(self.socketId, IrcClient.str2ab(s), w);
+  chrome.socket.write(self.socketId, IrcClient.str2ab(s), w);
 }
 
 IrcClient.prototype.connect = function() {
-	var self = this;
-	if(chrome.socket) {
-		chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
-		{
-			self.socketId = createInfo.socketId;
-			chrome.socket.connect(self.socketId, self.serverName, self.serverPort, self.onConnected.bind(self));
-		}); // end socket.create
-	}
+  var self = this;
+  if(chrome.socket) {
+  	chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
+  	{
+  		self.socketId = createInfo.socketId;
+  		chrome.socket.connect(self.socketId, self.serverName, self.serverPort, self.onConnected.bind(self));
+  	}); // end socket.create
+  }
 }
 
 IrcClient.prototype.onConnected = function() {
-	var self = this;
-	if(self.onConnect) { 
-		self.onConnect();
-	}
+  var self = this;
+  if(self.onConnect) { 
+  	self.onConnect();
+  }
   self.readForever();
   self.write('PASS none');
   self.write('NICK ' + self.nick);
@@ -93,65 +93,65 @@ IrcClient.prototype.onConnected = function() {
 }
 
 IrcClient.prototype.pong = function(serverMessage) {
-	var self = this;
-	if(serverMessage) {
-		self.write("PONG :"+ serverMessage.username.substring(1));
-	} 
-	else {
-		throw new Error("Error: No message passed to pong.");
-	}
+  var self = this;
+  if(serverMessage) {
+  	self.write("PONG :"+ serverMessage.username.substring(1));
+  } 
+  else {
+  	throw new Error("Error: No message passed to pong.");
+  }
 }
 
 IrcClient.prototype.joinChannel = function(channelName) {
-	var self = this;
-	if(channelName) {
-		self.write('JOIN ' + channelName);
-	}
-	else {
-		if(this.channel) {
-			self.write('JOIN ' + self.channel);
-		}
-		else {
-			throw new Error("joinChannel: No channelName passed in and no default channel defined!");
-		}
-	}
+  var self = this;
+  if(channelName) {
+  	self.write('JOIN ' + channelName);
+  }
+  else {
+  	if(this.channel) {
+  		self.write('JOIN ' + self.channel);
+  	}
+  	else {
+  		throw new Error("joinChannel: No channelName passed in and no default channel defined!");
+  	}
+  }
 }
 
 IrcClient.prototype.sendPrivmsg = function (reciever, message) {
-	var self = this;
-	if(reciever && message) {
-		self.write("PRIVMSG " + reciever + " :" + message);
-	}
-	else {
-		var except = "sendPrivmsg: ";
-		if(!reciever) {
-			except += "reciever unspecified. ";
-		}
-		if(!message) {
-			except += "message unspecified. ";
-		}
-		throw new Error(except);
-	}
+  var self = this;
+  if(reciever && message) {
+  	self.write("PRIVMSG " + reciever + " :" + message);
+  }
+  else {
+  	var except = "sendPrivmsg: ";
+  	if(!reciever) {
+  		except += "reciever unspecified. ";
+  	}
+  	if(!message) {
+  		except += "message unspecified. ";
+  	}
+  	throw new Error(except);
+  }
 }
 
 //Main message processing loop.
 IrcClient.prototype.readForever = function(readInfo)
 {
-	var self = this;
+  var self = this;
   if(readInfo!==undefined && readInfo.resultCode < 0)
   {
-		if(self.onDisconnect) {
-			// we've been disconnected, dang.
-			self.onDisconnect(readInfo.resultCode);
-		}
-		self.onDisconnected(readInfo.resultCode);
-		return;
+  	if(self.onDisconnect) {
+  		// we've been disconnected, dang.
+  		self.onDisconnect(readInfo.resultCode);
+  	}
+  	self.onDisconnected(readInfo.resultCode);
+  	return;
   }
   if (readInfo !== undefined && readInfo.resultCode > 0)
   {
-		if(self.onRead) {
-			self.onRead(readInfo);
-		}
+  	if(self.onRead) {
+  		self.onRead(readInfo);
+  	}
     var serverMsg = IrcClient.ab2str(readInfo.data);
 
     var serverLines = [];
@@ -169,9 +169,9 @@ IrcClient.prototype.readForever = function(readInfo)
       }
     }
 
-		if(self.onMessages) {
-			self.onMessages(serverMessages);
-		}
+  	if(self.onMessages) {
+  		self.onMessages(serverMessages);
+  	}
   }
 
   chrome.socket.read(self.socketId, null, self.readForever.bind(self));
@@ -179,34 +179,34 @@ IrcClient.prototype.readForever = function(readInfo)
 
 IrcClient.prototype.onDisconnected = function(resultCode)
 {
-	var self = this;
+  var self = this;
   chrome.socket.disconnect(self.socketId);
 } // end onDisconnected
 
 IrcClient.prototype.setUserName = function(newUserName, optionalCallback)
 {
-	var self = this;
-	if(self.runningInChrome()) {
-	  chrome.storage.local.set({userName: newUserName}, optionalCallback);
-	}
-	else {
-		//Don't do anything for now, as we don't have Local Storage.
-	}
+  var self = this;
+  if(self.runningInChrome()) {
+    chrome.storage.local.set({userName: newUserName}, optionalCallback);
+  }
+  else {
+  	//Don't do anything for now, as we don't have Local Storage.
+  }
 } // end setUserName
 
 IrcClient.prototype.retrieveUserName = function(defaultUsername) {
-	var self = this;
-	if(self.runningInChrome()) {
-		chrome.storage.local.get('userName', function(results) {
-			self.nick = results.userName || defaultUsername;
-		}); // end get userName from storage
-	}
-	else {
-		self.nick = defaultUsername;
-	}
+  var self = this;
+  if(self.runningInChrome()) {
+  	chrome.storage.local.get('userName', function(results) {
+  		self.nick = results.userName || defaultUsername;
+  	}); // end get userName from storage
+  }
+  else {
+  	self.nick = defaultUsername;
+  }
 }
 //@returns true if we're both running in an browser, and running under Google
 //Chrome, and have access to Chrome Storage.
 IrcClient.prototype.runningInChrome = function() {
-	return (window.chrome && chrome && chrome.storage);
+  return (window.chrome && chrome && chrome.storage);
 }

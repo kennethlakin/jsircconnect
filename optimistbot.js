@@ -1,7 +1,5 @@
 var socketId;
-//var serverConnect = "10.0.0.30";
-var serverConnect = "10.0.1.24";
-//var serverConnect = "wright.freenode.net";
+var serverConnect = "chat.freenode.net";
 var ircPort = 6667;
 var serverName;
 var channelName ="#realtestchannel";
@@ -36,27 +34,27 @@ function IrcCommand() {
 }
 
 function main () {
-	client.onConnect = onConnected;
-	client.onDisconnect = onDisconnected;
-	client.onMessages = handleOptimistMessages;
-	client.onRead = read;
-	client.onWritten = onWritten;
-	client.onWrite = onWrite;
+  client.onConnect = onConnected;
+  client.onDisconnect = onDisconnected;
+  client.onMessages = handleOptimistMessages;
+  client.onRead = read;
+  client.onWritten = onWritten;
+  client.onWrite = onWrite;
 
-	client.connect();
-	var inputElement = document.getElementById('typing');
-	if(inputElement) {
-		inputElement.addEventListener('keydown', function (event)
-		{
-			// if the user pushed the enter key while typing a message (13 is enter):
-			if (event.keyCode === 13)
-			{
-				var message = inputElement.value;
-				inputElement.value = "";
-				client.write("PRIVMSG " + channelName + " :" + message);
-			}
-		});
-	}
+  client.connect();
+  var inputElement = document.getElementById('typing');
+  if(inputElement) {
+  	inputElement.addEventListener('keydown', function (event)
+  	{
+  		// if the user pushed the enter key while typing a message (13 is enter):
+  		if (event.keyCode === 13)
+  		{
+  			var message = inputElement.value;
+  			inputElement.value = "";
+  			client.write("PRIVMSG " + channelName + " :" + message);
+  		}
+  	});
+  }
 };
 
 
@@ -73,51 +71,51 @@ function onDisconnected()
 function onWrite(s)
 {
   console.log(s);
-	displayLineToScreen("[sending] " + s);
+  displayLineToScreen("[sending] " + s);
 }//end write
 
 function read(readInfo)
 {
-	console.log(new Date() + IrcClient.ab2str(readInfo.data));
+  console.log(new Date() + IrcClient.ab2str(readInfo.data));
 }//end read
 
 function onWritten(one, two)
 {
-	if(two) {
-		console.log('write was ', two); 
-		if(one) {
-			one();
-		}
-	}
-	else {
-		console.log('write was ', one); 
-	}
+  if(two) {
+  	console.log('write was ', two); 
+  	if(one) {
+  		one();
+  	}
+  }
+  else {
+  	console.log('write was ', one); 
+  }
 }
 
 function handleOptimistMessages(serverMessages) {
-	for(var i = 0; i < serverMessages.length; ++i)
-	{
-		var m = serverMessages[i];
-		console.log(m.command, m);
-		switch(m.command)
-		{
-			//Welcome message!
-			case "001":
-				client.joinChannel(channelName);
-				break;
-			case "PING":
-				client.pong(m);
-				displayLineToScreen('[SERVER PONG]');
-				break;
-			case "PRIVMSG":
-				handlePrivmsg(m);
-				break;
-			default:
-				//All this spew is a bit annoying.
-				//console.log("WARN: Unhandled message: ", m);
-				break;
-		}
-	}
+  for(var i = 0; i < serverMessages.length; ++i)
+  {
+  	var m = serverMessages[i];
+  	console.log(m.command, m);
+  	switch(m.command)
+  	{
+  		//Welcome message!
+  		case "001":
+  			client.joinChannel(channelName);
+  			break;
+  		case "PING":
+  			client.pong(m);
+  			displayLineToScreen('[SERVER PONG]');
+  			break;
+  		case "PRIVMSG":
+  			handlePrivmsg(m);
+  			break;
+  		default:
+  			//All this spew is a bit annoying.
+  			//console.log("WARN: Unhandled message: ", m);
+  			break;
+  	}
+  }
 }
 
 function handlePrivmsg(message) {
@@ -133,11 +131,11 @@ function handlePrivmsg(message) {
       {
         arg = arg.substring(1);
       }
-			//If someone has mentioned us, speak back.
+  		//If someone has mentioned us, speak back.
       if(arg.search(userName) != -1)
       {
-				var text = "I LIKE RAINBOWS?";
-				sendPrivmsg(channelName, text);
+  			var text = "I LIKE RAINBOWS?";
+  			sendPrivmsg(channelName, text);
       }
     }
   }
@@ -146,29 +144,29 @@ function handlePrivmsg(message) {
   {
     var messagingUser = message.prefix.slice(1, message.prefix.search("!"));
     var text = "I LIKE RAINBOWS!?";
-		sendPrivmsg(messagingUser, text);
+  	sendPrivmsg(messagingUser, text);
   }
 }
 
 function sendPrivmsg(reciever, message) {
-	var dateObj = new Date();
-	if(reciever != channelName) {
-		client.sendPrivmsg(reciever, message);
-	}
-	else if (dateObj.getTime()-timeOfLastChanMsg.getTime()>silentTimeMin*60000)
-	{
-		timeOfLastChanMsg.setTime(dateObj.getTime());
-		client.sendPrivmsg(reciever, message);
-	}
-	else
-	{
-		console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
-		console.log(dateObj.getTime());
-		console.log("Time of timeOfLastChanMsg")
-		console.log(timeOfLastChanMsg.getTime());
-		console.log(dateObj.getTime()-timeOfLastChanMsg.getTime())
-		console.log(dateObj.getTime()-timeOfLastChanMsg.getTime()<silentTimeMin*60000)
-	}
+  var dateObj = new Date();
+  if(reciever != channelName) {
+  	client.sendPrivmsg(reciever, message);
+  }
+  else if (dateObj.getTime()-timeOfLastChanMsg.getTime()>silentTimeMin*60000)
+  {
+  	timeOfLastChanMsg.setTime(dateObj.getTime());
+  	client.sendPrivmsg(reciever, message);
+  }
+  else
+  {
+  	console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
+  	console.log(dateObj.getTime());
+  	console.log("Time of timeOfLastChanMsg")
+  	console.log(timeOfLastChanMsg.getTime());
+  	console.log(dateObj.getTime()-timeOfLastChanMsg.getTime())
+  	console.log(dateObj.getTime()-timeOfLastChanMsg.getTime()<silentTimeMin*60000)
+  }
 }
 
 function displayLineToScreen(text)
@@ -184,5 +182,5 @@ function displayLineToScreen(text)
 }
 
 if(window.chrome) {
-	main();
+  main();
 }

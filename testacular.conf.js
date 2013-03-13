@@ -10,9 +10,9 @@ basePath = '';
 files = [
   JASMINE,
   JASMINE_ADAPTER,
-	"crackmessagetest.js",
-	"irclib.js",
-	"optimistbot.js"
+  "crackmessagetest.js",
+  "irclib.js",
+  "optimistbot.js"
 ];
 
 
