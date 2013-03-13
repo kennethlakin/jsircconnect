@@ -107,7 +107,7 @@ IrcClient.prototype.joinChannel = function(channelName) {
 	}
 	else {
 		if(this.channel) {
-			self.write('JOIN' + self.channel);
+			self.write('JOIN ' + self.channel);
 		}
 		else {
 			throw new Error("joinChannel: No channelName passed in and no default channel defined!");
