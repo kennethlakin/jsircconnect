@@ -6,7 +6,7 @@ var OptimistBot = {
    client : undefined,
    socketId : undefined,
    timeOfLastChanMsg : new Date(),
-   silentTimeMin:0.5,
+   silentTimeInMin:0.5,
 
 
   //OptimistBot Sayings
@@ -152,19 +152,22 @@ OptimistBot.sendPrivmsg = function(reciever, message) {
   if(reciever != OptimistBot.channelName) {
     OptimistBot.client.sendPrivmsg(reciever, message);
   }
-  else if (dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime()>OptimistBot.silentTimeMin*60000)
-  {
-    OptimistBot.timeOfLastChanMsg.setTime(dateObj.getTime());
-    OptimistBot.client.sendPrivmsg(reciever, message);
-  }
-  else
-  {
-    console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
-    console.log(dateObj.getTime());
-    console.log("Time of timeOfLastChanMsg")
-    console.log(OptimistBot.timeOfLastChanMsg.getTime());
-    console.log(dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime())
-    console.log(dateObj.getTime()-OptimistBot.timeOfLastChanMsg.getTime()<OptimistBot.silentTimeMin*60000)
+  else {
+    var currTime = dateObj.getTime();
+    var silentTime = OptimistBot.silentTimeInMin*60000;
+    var lastSentTime = OptimistBot.timeOfLastChanMsg.getTime();
+    if (currTime - lastSentTime > silentTime) {
+      OptimistBot.timeOfLastChanMsg.setTime(currTime);
+      OptimistBot.client.sendPrivmsg(reciever, message);
+    }
+    else {
+      console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
+      console.log(currTime);
+      console.log("Time of timeOfLastChanMsg")
+      console.log(lastSentTime);
+      console.log(currTime - lastSentTime)
+      console.log(currTime - lastSentTime < silentTime)
+    }
   }
 }
 
