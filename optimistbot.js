@@ -1,5 +1,6 @@
 var socketId;
-var serverConnect = "10.0.0.30";
+//var serverConnect = "10.0.0.30";
+var serverConnect = "10.0.1.24";
 //var serverConnect = "wright.freenode.net";
 var ircPort = 6667;
 var serverName;
@@ -44,16 +45,18 @@ function main () {
 
 	client.connect();
 	var inputElement = document.getElementById('typing');
-	inputElement.addEventListener('keydown', function (event)
-	{
-		// if the user pushed the enter key while typing a message (13 is enter):
-		if (event.keyCode === 13)
+	if(inputElement) {
+		inputElement.addEventListener('keydown', function (event)
 		{
-			var message = inputElement.value;
-			inputElement.value = "";
-			client.write("PRIVMSG " + channelName + " :" + message);
-		}
-	});
+			// if the user pushed the enter key while typing a message (13 is enter):
+			if (event.keyCode === 13)
+			{
+				var message = inputElement.value;
+				inputElement.value = "";
+				client.write("PRIVMSG " + channelName + " :" + message);
+			}
+		});
+	}
 };
 
 

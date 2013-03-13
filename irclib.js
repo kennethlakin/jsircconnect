@@ -37,7 +37,7 @@ IrcClient.ab2str = function(buf) {
 
 //Converts a single message from an IRC server into an IrcCommand object.
 IrcClient.crackMessage = function(serverLine) {
-	if(serverLine.length == 0)
+	if(serverLine.length === 0)
 	{
 		return undefined;
 	}
@@ -72,11 +72,13 @@ IrcClient.prototype.write = function(s, f) {
 
 IrcClient.prototype.connect = function() {
 	var self = this;
-	chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
-	{
-		self.socketId = createInfo.socketId;
-		chrome.socket.connect(self.socketId, self.serverName, self.serverPort, self.onConnected.bind(self));
-	}); // end socket.create
+	if(chrome.socket) {
+		chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
+		{
+			self.socketId = createInfo.socketId;
+			chrome.socket.connect(self.socketId, self.serverName, self.serverPort, self.onConnected.bind(self));
+		}); // end socket.create
+	}
 }
 
 IrcClient.prototype.onConnected = function() {
@@ -204,7 +206,7 @@ IrcClient.prototype.retrieveUserName = function(defaultUsername) {
 	}
 }
 //@returns true if we're both running in an browser, and running under Google
-//Chrome.
+//Chrome, and have access to Chrome Storage.
 IrcClient.prototype.runningInChrome = function() {
-	return (window.chrome && chrome);
+	return (window.chrome && chrome && chrome.storage);
 }
