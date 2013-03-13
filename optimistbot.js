@@ -44,16 +44,16 @@ function main () {
   client.connect();
   var inputElement = document.getElementById('typing');
   if(inputElement) {
-  	inputElement.addEventListener('keydown', function (event)
-  	{
-  		// if the user pushed the enter key while typing a message (13 is enter):
-  		if (event.keyCode === 13)
-  		{
-  			var message = inputElement.value;
-  			inputElement.value = "";
-  			client.write("PRIVMSG " + channelName + " :" + message);
-  		}
-  	});
+    inputElement.addEventListener('keydown', function (event)
+    {
+      // if the user pushed the enter key while typing a message (13 is enter):
+      if (event.keyCode === 13)
+      {
+        var message = inputElement.value;
+        inputElement.value = "";
+        client.write("PRIVMSG " + channelName + " :" + message);
+      }
+    });
   }
 };
 
@@ -82,39 +82,39 @@ function read(readInfo)
 function onWritten(one, two)
 {
   if(two) {
-  	console.log('write was ', two); 
-  	if(one) {
-  		one();
-  	}
+    console.log('write was ', two); 
+    if(one) {
+      one();
+    }
   }
   else {
-  	console.log('write was ', one); 
+    console.log('write was ', one); 
   }
 }
 
 function handleOptimistMessages(serverMessages) {
   for(var i = 0; i < serverMessages.length; ++i)
   {
-  	var m = serverMessages[i];
-  	console.log(m.command, m);
-  	switch(m.command)
-  	{
-  		//Welcome message!
-  		case "001":
-  			client.joinChannel(channelName);
-  			break;
-  		case "PING":
-  			client.pong(m);
-  			displayLineToScreen('[SERVER PONG]');
-  			break;
-  		case "PRIVMSG":
-  			handlePrivmsg(m);
-  			break;
-  		default:
-  			//All this spew is a bit annoying.
-  			//console.log("WARN: Unhandled message: ", m);
-  			break;
-  	}
+    var m = serverMessages[i];
+    console.log(m.command, m);
+    switch(m.command)
+    {
+      //Welcome message!
+      case "001":
+        client.joinChannel(channelName);
+        break;
+      case "PING":
+        client.pong(m);
+        displayLineToScreen('[SERVER PONG]');
+        break;
+      case "PRIVMSG":
+        handlePrivmsg(m);
+        break;
+      default:
+        //All this spew is a bit annoying.
+        //console.log("WARN: Unhandled message: ", m);
+        break;
+    }
   }
 }
 
@@ -131,11 +131,11 @@ function handlePrivmsg(message) {
       {
         arg = arg.substring(1);
       }
-  		//If someone has mentioned us, speak back.
+      //If someone has mentioned us, speak back.
       if(arg.search(userName) != -1)
       {
-  			var text = "I LIKE RAINBOWS?";
-  			sendPrivmsg(channelName, text);
+        var text = "I LIKE RAINBOWS?";
+        sendPrivmsg(channelName, text);
       }
     }
   }
@@ -144,28 +144,28 @@ function handlePrivmsg(message) {
   {
     var messagingUser = message.prefix.slice(1, message.prefix.search("!"));
     var text = "I LIKE RAINBOWS!?";
-  	sendPrivmsg(messagingUser, text);
+    sendPrivmsg(messagingUser, text);
   }
 }
 
 function sendPrivmsg(reciever, message) {
   var dateObj = new Date();
   if(reciever != channelName) {
-  	client.sendPrivmsg(reciever, message);
+    client.sendPrivmsg(reciever, message);
   }
   else if (dateObj.getTime()-timeOfLastChanMsg.getTime()>silentTimeMin*60000)
   {
-  	timeOfLastChanMsg.setTime(dateObj.getTime());
-  	client.sendPrivmsg(reciever, message);
+    timeOfLastChanMsg.setTime(dateObj.getTime());
+    client.sendPrivmsg(reciever, message);
   }
   else
   {
-  	console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
-  	console.log(dateObj.getTime());
-  	console.log("Time of timeOfLastChanMsg")
-  	console.log(timeOfLastChanMsg.getTime());
-  	console.log(dateObj.getTime()-timeOfLastChanMsg.getTime())
-  	console.log(dateObj.getTime()-timeOfLastChanMsg.getTime()<silentTimeMin*60000)
+    console.log("You don't get to write because you messaged the channel already. dateObj.getTime: ")
+    console.log(dateObj.getTime());
+    console.log("Time of timeOfLastChanMsg")
+    console.log(timeOfLastChanMsg.getTime());
+    console.log(dateObj.getTime()-timeOfLastChanMsg.getTime())
+    console.log(dateObj.getTime()-timeOfLastChanMsg.getTime()<silentTimeMin*60000)
   }
 }
 
@@ -181,6 +181,6 @@ function displayLineToScreen(text)
   }
 }
 
-if(window.chrome) {
+if(IrcClient.runningInChrome()) {
   main();
 }
