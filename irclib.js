@@ -47,18 +47,37 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
   //We may be running under node.js.
   else if(window === undefined && require) {
     var net = require("net");
-    //FIXME: Actually impl the functions in here!
+    var client;
     this._connect = function(serverName, port, cb) {
       var self = this;
+      client = net.connect({port: port, host: serverName}, cb);
+      client.on('data', self._callReadForever);
+
+      //FIXME: Need to pass result code to onDisconnected.
+      client.on('error', self.onDisconnected);
+      client.on('close', self.onDisconnected);
+      client.on('end', self.onDisconnected);
     }
     this._write = function(string, func) {
       var self = this;
+      client.write(string, func);
     }
-    this._read = function(cb) {
+    this._read = function(data) {
       var self = this;
+      //...we don't get to manually schedule reads on our own. Grr.
+      //So, we just do nothing and let the node.js event handling
+      //schedule our eternal reads...
     }
     this._disconnect = function() {
       var self = this;
+      client.end();
+    }
+    this._callReadForever = function(data) {
+      var self = this;
+      //If we've been called, we have data, without error,
+      //so setting resultCode to >0 is okay.
+      var readInfo = { resultCode: 1, data: data};
+      self.readForever(readInfo);
     }
 
   }
@@ -183,10 +202,6 @@ IrcClient.prototype.readForever = function(readInfo)
   var self = this;
   if(readInfo!==undefined && readInfo.resultCode < 0)
   {
-    if(self.onDisconnect) {
-      // we've been disconnected, dang.
-      self.onDisconnect(readInfo.resultCode);
-    }
     self.onDisconnected(readInfo.resultCode);
     return;
   }
@@ -217,15 +232,16 @@ IrcClient.prototype.readForever = function(readInfo)
     }
   }
 
-  //FIXME: The caller here relies on the chrome sockets API behavior
-  //for the data passed into it... we need to come up with a common way to
-  //transform the passed-in data!
   self._read(self.readForever.bind(self));
 }//end readForever
 
 IrcClient.prototype.onDisconnected = function(resultCode)
 {
   var self = this;
+  if(self.onDisconnect) {
+    // we've been disconnected, dang.
+    self.onDisconnect(resultCode);
+  }
   self._disconnect();
 } // end onDisconnected
 
