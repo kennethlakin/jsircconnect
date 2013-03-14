@@ -18,7 +18,50 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
   this.serverPort = serverPort;
   this.channel = channel;
   this.retrieveUserName(defaultNick);
-  this.socketId;
+  //We're probably running as a Chrome Extension.
+  //FIXME: Make this check square with the runningInChrome check,
+  //       and play nicely with the various mocks that we're working with.
+  if(window !== undefined && chrome && chrome.socket) {
+    this.socketId;
+    this._connect = function(serverName, port, cb) {
+      var self = this;
+      chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
+      {
+        self.socketId = createInfo.socketId;
+        chrome.socket.connect(self.socketId, serverName, serverPort, cb);
+      }); // end socket.create
+    }
+    this._write = function(string, func) {
+      var self = this;
+      chrome.socket.write(self.socketId, string, func);
+    }
+    this._read = function(cb) {
+      var self = this;
+      chrome.socket.read(self.socketId, null, cb);
+    }
+    this._disconnect = function() {
+      var self = this;
+      chrome.socket.disconnect(self.socketId);
+    }
+  }
+  //We may be running under node.js.
+  else if(window === undefined && require) {
+    var net = require("net");
+    //FIXME: Actually impl the functions in here!
+    this._connect = function(serverName, port, cb) {
+      var self = this;
+    }
+    this._write = function(string, func) {
+      var self = this;
+    }
+    this._read = function(cb) {
+      var self = this;
+    }
+    this._disconnect = function() {
+      var self = this;
+    }
+
+  }
 };
 
 IrcClient.str2ab = function(str) {
@@ -73,16 +116,12 @@ IrcClient.prototype.write = function(s, f) {
     w = self.onWritten.bind(self, f);
   }
   s+="\r\n";
-  chrome.socket.write(self.socketId, IrcClient.str2ab(s), w);
+  self._write(IrcClient.str2ab(s), w);
 }
 
 IrcClient.prototype.connect = function() {
   var self = this;
-  chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
-  {
-    self.socketId = createInfo.socketId;
-    chrome.socket.connect(self.socketId, self.serverName, self.serverPort, self.onConnected.bind(self));
-  }); // end socket.create
+  self._connect(self.serverName, self.serverPort, self.onConnected.bind(self));
 }
 
 IrcClient.prototype.onConnected = function() {
@@ -112,7 +151,7 @@ IrcClient.prototype.joinChannel = function(channelName) {
     self.write('JOIN ' + channelName);
   }
   else {
-    if(this.channel) {
+    if(self.channel) {
       self.write('JOIN ' + self.channel);
     }
     else {
@@ -178,13 +217,16 @@ IrcClient.prototype.readForever = function(readInfo)
     }
   }
 
-  chrome.socket.read(self.socketId, null, self.readForever.bind(self));
+  //FIXME: The caller here relies on the chrome sockets API behavior
+  //for the data passed into it... we need to come up with a common way to
+  //transform the passed-in data!
+  self._read(self.readForever.bind(self));
 }//end readForever
 
 IrcClient.prototype.onDisconnected = function(resultCode)
 {
   var self = this;
-  chrome.socket.disconnect(self.socketId);
+  self._disconnect();
 } // end onDisconnected
 
 IrcClient.prototype.setUserName = function(newUserName, optionalCallback)
