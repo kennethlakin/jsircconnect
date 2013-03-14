@@ -33,7 +33,8 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
     }
     this._write = function(string, func) {
       var self = this;
-      chrome.socket.write(self.socketId, string, func);
+      var ab = IrcClient.str2ab(string);
+      chrome.socket.write(self.socketId, ab, func);
     }
     this._read = function(cb) {
       var self = this;
@@ -44,7 +45,7 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
       chrome.socket.disconnect(self.socketId);
     }
   }
-  //We may be running under node.js.
+  //We should be running under node.js.
   else if(typeof window === 'undefined' && require) {
     var net = require("net");
     var client;
@@ -57,19 +58,16 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
       client.on('error', self.onDisconnected);
       client.on('close', self.onDisconnected);
       client.on('end', self.onDisconnected);
-    }
+    }.bind(this);
     this._write = function(string, func) {
-      var self = this;
       client.write(string, func);
     }
     this._read = function(data) {
-      var self = this;
       //...we don't get to manually schedule reads on our own. Grr.
       //So, we just do nothing and let the node.js event handling
       //schedule our eternal reads...
     }
     this._disconnect = function() {
-      var self = this;
       client.end();
     }
     this._callReadForever = function(data) {
@@ -78,7 +76,7 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
       //so setting resultCode to >0 is okay.
       var readInfo = { resultCode: 1, data: data};
       self.readForever(readInfo);
-    }
+    }.bind(this);
 
   }
 };
@@ -136,7 +134,7 @@ IrcClient.prototype.write = function(s, f) {
     w = self.onWritten.bind(self, f);
   }
   s+="\r\n";
-  self._write(IrcClient.str2ab(s), w);
+  self._write(s, w);
 }
 
 IrcClient.prototype.connect = function() {
