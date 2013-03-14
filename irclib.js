@@ -21,7 +21,7 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
   //We're probably running as a Chrome Extension.
   //FIXME: Make this check square with the runningInChrome check,
   //       and play nicely with the various mocks that we're working with.
-  if(window !== undefined && chrome && chrome.socket) {
+  if(typeof window !== 'undefined' && chrome && chrome.socket) {
     this.socketId;
     this._connect = function(serverName, port, cb) {
       var self = this;
@@ -45,7 +45,7 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
     }
   }
   //We may be running under node.js.
-  else if(window === undefined && require) {
+  else if(typeof window === 'undefined' && require) {
     var net = require("net");
     var client;
     this._connect = function(serverName, port, cb) {
@@ -122,6 +122,7 @@ IrcClient.crackMessage = function(serverLine) {
 //@returns true if we're both running in an browser, and running under Google
 //Chrome, and have access to Chrome Storage.
 IrcClient.runningInChrome = function() {
+  if(typeof window === "undefined") return false;
   return (window.chrome && chrome && chrome.storage);
 }
 
@@ -266,4 +267,9 @@ IrcClient.prototype.retrieveUserName = function(defaultUsername) {
   else {
     self.nick = defaultUsername;
   }
+}
+
+//Node.js exports.
+if(typeof exports !== 'undefined') {
+  exports.IrcClient = IrcClient;
 }

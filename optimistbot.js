@@ -24,7 +24,10 @@ var OptimistBot = {
       ]
 };
 
-
+//Node.js imports!
+if(typeof require !== 'undefined') {
+  var IrcClient = require("./irclib").IrcClient;
+}
 
 OptimistBot.main  = function() {
   OptimistBot.client = new IrcClient(
@@ -184,6 +187,24 @@ OptimistBot.displayLineToScreen = function(text)
 }
 
 if(IrcClient.runningInChrome()) {
+  OptimistBot.main();
+}
+//Node.js main!
+else if(typeof exports !== 'undefined') {
+  //Mocks to make the UI "work" under node.
+  var document = {
+    createElement : function() {
+      return { textContent : "" }
+    },
+    getElementById : function() {
+      return {
+        textContent : "",
+        addEventListener: function() {},
+        appendChild: function() {},
+        childNodes: { length: 0}
+        }
+      }
+  };
   OptimistBot.main();
 }
 
