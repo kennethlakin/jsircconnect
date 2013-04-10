@@ -1,9 +1,9 @@
 //Easy way to package up a message from the server.
 class IrcCommand {
-  prefix : string;
-  command : string;
-  username : string;
-  args : string[];
+  prefix : string = "";
+  command : string = "";
+  username : string = "";
+  args : string[] = [];
 }
 
 //Defined extension points:
@@ -19,14 +19,12 @@ class IrcClient {
   constructor(public serverName: string,
               public serverPort: number,
               defaultNick: string,
-              public channel: string)
-  {
+              public channel: string) {
     this.retrieveUserName(defaultNick);
     //We're probably running as a Chrome Extension.
     //FIXME: Make this check square with the runningInChrome check,
     //       and play nicely with the various mocks that we're working with.
     if(typeof window !== 'undefined' && chrome && chrome.socket) {
-      this.socketId;
       this._connect = function(serverName, port, cb) {
         var self = this;
         chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
