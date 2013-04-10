@@ -198,8 +198,17 @@ class IrcClient {
     }
   }
   //Main message processing loop.
-  public readForever (readInfo? : any) : void
+  public readForever (one? : any, two? : any) : void
   {
+    var readInfo;
+    var prevLine;
+    if(arguments.length == 2) {
+      readInfo = two;
+      prevLine = one;
+    }
+    else {
+      readInfo = one;
+    }
     if(readInfo!==undefined && readInfo.resultCode < 0)
     {
       this.onDisconnected(readInfo.resultCode);
@@ -210,19 +219,27 @@ class IrcClient {
       if(this.onRead) {
         this.onRead(readInfo);
       }
-      var serverMsg = IrcClient.ab2str(readInfo.data);
+      var serverStr = IrcClient.ab2str(readInfo.data);
+      var serverMsg =
+      prevLine !== undefined ?
+        prevLine + serverStr : serverStr;
 
       var serverLines = [];
       var serverMessages = [];
       serverLines = serverMsg.split("\n");
 
       //Split the server messages into single lines.
-      for(var i = 0; i < serverLines.length; i++)
-      {
+      for(var i = 0; i < serverLines.length; i++) {
+        var line = serverLines[i];
+        //This Chrome Sockets API sometimes gives us incomplete lines.
+        //We assume that there will be only one of these, and save it for later.
+        if(line.length > 0 && line.slice(-1) != "\r") {
+          prevLine = line;
+          break;
+        }
         //If the line wasn't empty, save the message.
-        var msg = IrcClient.crackMessage(serverLines[i]);
-        if(msg !== undefined)
-        {
+        var msg = IrcClient.crackMessage(line);
+        if(msg !== undefined) {
           serverMessages.push(msg);
         }
       }
@@ -232,7 +249,7 @@ class IrcClient {
       }
     }
 
-    this._read(this.readForever.bind(this));
+    this._read(this.readForever.bind(this, prevLine));
   }//end readForever
 
   public onDisconnected (resultCode : any) : void
