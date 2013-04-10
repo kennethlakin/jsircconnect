@@ -22,7 +22,6 @@ function IrcClient(serverName, serverPort, defaultNick, channel) {
   //FIXME: Make this check square with the runningInChrome check,
   //       and play nicely with the various mocks that we're working with.
   if(typeof window !== 'undefined' && chrome && chrome.socket) {
-    this.socketId;
     this._connect = function(serverName, port, cb) {
       var self = this;
       chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
