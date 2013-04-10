@@ -1,3 +1,2 @@
 all:
-	-@tsc irclib.ts
-	-@tsc optimistbot.ts
+	-@tsc --target ES5 irclib.ts optimistbot.ts
