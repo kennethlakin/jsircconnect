@@ -11,10 +11,11 @@ class IrcCommand {
 //onDisconnect(resultCode)
 //onConnect()
 //onRead(readInfo)
-//onWritten(writeInfo)
+//onWritten(writeInfo, optional_function)
 //onWrite(data)
 class IrcClient {
   public nick : string;
+  public socketId : number;
   constructor(public serverName: string,
               public serverPort: number,
               defaultNick: string,
@@ -34,9 +35,9 @@ class IrcClient {
           chrome.socket.connect(self.socketId, serverName, serverPort, cb);
         }); // end socket.create
       }
-      this._write = function(string, func) {
+      this._write = function(str, func) {
         var self = this;
-        var ab = IrcClient.str2ab(string);
+        var ab = IrcClient.str2ab(str);
         chrome.socket.write(self.socketId, ab, func);
       }
       this._read = function(cb) {
@@ -62,8 +63,8 @@ class IrcClient {
         client.on('close', self.onDisconnected);
         client.on('end', self.onDisconnected);
       }.bind(this);
-      this._write = function(string, func) {
-        client.write(string, func);
+      this._write = function(str, func) {
+        client.write(str, func);
       }
       this._read = function(data) {
         //...we don't get to manually schedule reads on our own. Grr.
@@ -82,6 +83,20 @@ class IrcClient {
       }.bind(this);
     }
   }
+
+  //Extension points.
+  public onMessages(serverMessages: IrcCommand[]) {};
+  public onDisconnect(resultCode : any) {};
+  public onConnect() {};
+  public onRead(readInfo: any) {};
+  public onWritten(one: any, two: Function) {};
+  public onWrite(data: any) {};
+
+  private _connect(serverName: string, port: number, cb: Function) : void {};
+  private _write(str: string, func: Function) : void {};
+  private _read(cb: Function) : void {};
+  private _disconnect() : void {};
+  private _callReadForever(data : any) : void {};
 
   public static str2ab(str : string) : ArrayBuffer { 
     var buf = new ArrayBuffer(str.length*1); // 1 byte for each char
@@ -155,7 +170,7 @@ class IrcClient {
     self.write('USER USER 0 * :Real Name');
   }
 
-  public pong (serverMessage : string) : void {
+  public pong (serverMessage : IrcCommand) : void {
     var self = this;
     if(serverMessage) {
       self.write("PONG :"+ serverMessage.username.substring(1));
