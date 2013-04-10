@@ -26,25 +26,21 @@ class IrcClient {
     //       and play nicely with the various mocks that we're working with.
     if(typeof window !== 'undefined' && chrome && chrome.socket) {
       this._connect = function(serverName, port, cb) {
-        var self = this;
-        chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
+        chrome.socket.create('tcp', {}, function (createInfo)
         {
-          self.socketId = createInfo.socketId;
-          chrome.socket.connect(self.socketId, serverName, serverPort, cb);
-        }); // end socket.create
+          this.socketId = createInfo.socketId;
+          chrome.socket.connect(this.socketId, serverName, serverPort, cb);
+        }.bind(this)); // end socket.create
       }
       this._write = function(str, func) {
-        var self = this;
         var ab = IrcClient.str2ab(str);
-        chrome.socket.write(self.socketId, ab, func);
+        chrome.socket.write(this.socketId, ab, func);
       }
       this._read = function(cb) {
-        var self = this;
-        chrome.socket.read(self.socketId, null, cb);
+        chrome.socket.read(this.socketId, null, cb);
       }
       this._disconnect = function() {
-        var self = this;
-        chrome.socket.disconnect(self.socketId);
+        chrome.socket.disconnect(this.socketId);
       }
     }
     //We should be running under node.js.
@@ -52,14 +48,13 @@ class IrcClient {
       var net = require("net");
       var client;
       this._connect = function(serverName, port, cb) {
-        var self = this;
         client = net.connect({port: port, host: serverName}, cb);
-        client.on('data', self._callReadForever);
+        client.on('data', this._callReadForever);
 
         //FIXME: Need to pass result code to onDisconnected.
-        client.on('error', self.onDisconnected);
-        client.on('close', self.onDisconnected);
-        client.on('end', self.onDisconnected);
+        client.on('error', this.onDisconnected);
+        client.on('close', this.onDisconnected);
+        client.on('end', this.onDisconnected);
       }.bind(this);
       this._write = function(str, func) {
         client.write(str, func);
@@ -73,11 +68,10 @@ class IrcClient {
         client.end();
       }
       this._callReadForever = function(data) {
-        var self = this;
         //If we've been called, we have data, without error,
         //so setting resultCode to >0 is okay.
         var readInfo = { resultCode: 1, data: data};
-        self.readForever(readInfo);
+        this.readForever(readInfo);
       }.bind(this);
     }
   }
@@ -140,38 +134,34 @@ class IrcClient {
   }
 
   public write (s : string, f? : Function) : void {
-    var self = this;
     var w;
-    if(self.onWrite) {
-      self.onWrite(s);
+    if(this.onWrite) {
+      this.onWrite(s);
     }
-    if(self.onWritten) {
-      w = self.onWritten.bind(self, f);
+    if(this.onWritten) {
+      w = this.onWritten.bind(this, f);
     }
     s+="\r\n";
-    self._write(s, w);
+    this._write(s, w);
   }
 
   public connect() : void {
-    var self = this;
-    self._connect(self.serverName, self.serverPort, self.onConnected.bind(self));
+    this._connect(this.serverName, this.serverPort, this.onConnected.bind(this));
   }
 
   public onConnected() : void {
-    var self = this;
-    if(self.onConnect) { 
-      self.onConnect();
+    if(this.onConnect) { 
+      this.onConnect();
     }
-    self.readForever();
-    self.write('PASS none');
-    self.write('NICK ' + self.nick);
-    self.write('USER USER 0 * :Real Name');
+    this.readForever();
+    this.write('PASS none');
+    this.write('NICK ' + this.nick);
+    this.write('USER USER 0 * :Real Name');
   }
 
   public pong (serverMessage : IrcCommand) : void {
-    var self = this;
     if(serverMessage) {
-      self.write("PONG :"+ serverMessage.username.substring(1));
+      this.write("PONG :"+ serverMessage.username.substring(1));
     } 
     else {
       throw new Error("Error: No message passed to pong.");
@@ -179,13 +169,12 @@ class IrcClient {
   }
 
   public joinChannel (channelName : string) : void {
-    var self = this;
     if(channelName) {
-      self.write('JOIN ' + channelName);
+      this.write('JOIN ' + channelName);
     }
     else {
-      if(self.channel) {
-        self.write('JOIN ' + self.channel);
+      if(this.channel) {
+        this.write('JOIN ' + this.channel);
       }
       else {
         throw new Error("joinChannel: No channelName passed in and no default channel defined!");
@@ -194,9 +183,8 @@ class IrcClient {
   }
 
   public sendPrivmsg (reciever : string, message : string) : void {
-    var self = this;
     if(reciever && message) {
-      self.write("PRIVMSG " + reciever + " :" + message);
+      this.write("PRIVMSG " + reciever + " :" + message);
     }
     else {
       var except = "sendPrivmsg: ";
@@ -212,16 +200,15 @@ class IrcClient {
   //Main message processing loop.
   public readForever (readInfo? : any) : void
   {
-    var self = this;
     if(readInfo!==undefined && readInfo.resultCode < 0)
     {
-      self.onDisconnected(readInfo.resultCode);
+      this.onDisconnected(readInfo.resultCode);
       return;
     }
     if (readInfo !== undefined && readInfo.resultCode > 0)
     {
-      if(self.onRead) {
-        self.onRead(readInfo);
+      if(this.onRead) {
+        this.onRead(readInfo);
       }
       var serverMsg = IrcClient.ab2str(readInfo.data);
 
@@ -240,27 +227,25 @@ class IrcClient {
         }
       }
 
-      if(self.onMessages) {
-        self.onMessages(serverMessages);
+      if(this.onMessages) {
+        this.onMessages(serverMessages);
       }
     }
 
-    self._read(self.readForever.bind(self));
+    this._read(this.readForever.bind(this));
   }//end readForever
 
   public onDisconnected (resultCode : any) : void
   {
-    var self = this;
-    if(self.onDisconnect) {
+    if(this.onDisconnect) {
       // we've been disconnected, dang.
-      self.onDisconnect(resultCode);
+      this.onDisconnect(resultCode);
     }
-    self._disconnect();
+    this._disconnect();
   } // end onDisconnected
 
   public setUserName (newUserName : string, optionalCallback? : Function) : void
   {
-    var self = this;
     if(IrcClient.runningInChrome()) {
       chrome.storage.local.set({userName: newUserName}, optionalCallback);
     }
@@ -270,15 +255,7 @@ class IrcClient {
   } // end setUserName
 
   public retrieveUserName (defaultUsername : string) : void {
-    var self = this;
-    if(IrcClient.runningInChrome()) {
-      chrome.storage.local.get('userName', function(results) {
-        self.nick = results.userName || defaultUsername;
-      }); // end get userName from storage
-    }
-    else {
-      self.nick = defaultUsername;
-    }
+    this.nick = defaultUsername;
   }
 }
 
