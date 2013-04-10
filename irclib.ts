@@ -1,9 +1,9 @@
 //Easy way to package up a message from the server.
-function IrcCommand() {
-  this.prefix = "";
-  this.command = "";
-  this.username = "";
-  this.args = [];
+class IrcCommand {
+  prefix : string;
+  command : string;
+  username : string;
+  args : string[];
 }
 
 //Defined extension points:
@@ -13,115 +13,118 @@ function IrcCommand() {
 //onRead(readInfo)
 //onWritten(writeInfo)
 //onWrite(data)
-function IrcClient(serverName, serverPort, defaultNick, channel) {
-  this.serverName = serverName;
-  this.serverPort = serverPort;
-  this.channel = channel;
-  this.retrieveUserName(defaultNick);
-  //We're probably running as a Chrome Extension.
-  //FIXME: Make this check square with the runningInChrome check,
-  //       and play nicely with the various mocks that we're working with.
-  if(typeof window !== 'undefined' && chrome && chrome.socket) {
-    this.socketId;
-    this._connect = function(serverName, port, cb) {
-      var self = this;
-      chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
-      {
-        self.socketId = createInfo.socketId;
-        chrome.socket.connect(self.socketId, serverName, serverPort, cb);
-      }); // end socket.create
-    }
-    this._write = function(string, func) {
-      var self = this;
-      var ab = IrcClient.str2ab(string);
-      chrome.socket.write(self.socketId, ab, func);
-    }
-    this._read = function(cb) {
-      var self = this;
-      chrome.socket.read(self.socketId, null, cb);
-    }
-    this._disconnect = function() {
-      var self = this;
-      chrome.socket.disconnect(self.socketId);
-    }
-  }
-  //We should be running under node.js.
-  else if(typeof window === 'undefined' && require) {
-    var net = require("net");
-    var client;
-    this._connect = function(serverName, port, cb) {
-      var self = this;
-      client = net.connect({port: port, host: serverName}, cb);
-      client.on('data', self._callReadForever);
-
-      //FIXME: Need to pass result code to onDisconnected.
-      client.on('error', self.onDisconnected);
-      client.on('close', self.onDisconnected);
-      client.on('end', self.onDisconnected);
-    }.bind(this);
-    this._write = function(string, func) {
-      client.write(string, func);
-    }
-    this._read = function(data) {
-      //...we don't get to manually schedule reads on our own. Grr.
-      //So, we just do nothing and let the node.js event handling
-      //schedule our eternal reads...
-    }
-    this._disconnect = function() {
-      client.end();
-    }
-    this._callReadForever = function(data) {
-      var self = this;
-      //If we've been called, we have data, without error,
-      //so setting resultCode to >0 is okay.
-      var readInfo = { resultCode: 1, data: data};
-      self.readForever(readInfo);
-    }.bind(this);
-
-  }
-};
-
-IrcClient.str2ab = function(str) {
-  var buf = new ArrayBuffer(str.length*1); // 1 byte for each char
-  var bufView = new Uint8Array(buf);
-  for (var i=0, strLen=str.length; i<strLen; i++)
+class IrcClient {
+  public nick : string;
+  constructor(public serverName: string,
+              public serverPort: number,
+              defaultNick: string,
+              public channel: string)
   {
-    bufView[i] = str.charCodeAt(i);
+    this.retrieveUserName(defaultNick);
+    //We're probably running as a Chrome Extension.
+    //FIXME: Make this check square with the runningInChrome check,
+    //       and play nicely with the various mocks that we're working with.
+    if(typeof window !== 'undefined' && chrome && chrome.socket) {
+      this.socketId;
+      this._connect = function(serverName, port, cb) {
+        var self = this;
+        chrome.socket.create('tcp', {}, function onSocketCreate(createInfo)
+        {
+          self.socketId = createInfo.socketId;
+          chrome.socket.connect(self.socketId, serverName, serverPort, cb);
+        }); // end socket.create
+      }
+      this._write = function(string, func) {
+        var self = this;
+        var ab = IrcClient.str2ab(string);
+        chrome.socket.write(self.socketId, ab, func);
+      }
+      this._read = function(cb) {
+        var self = this;
+        chrome.socket.read(self.socketId, null, cb);
+      }
+      this._disconnect = function() {
+        var self = this;
+        chrome.socket.disconnect(self.socketId);
+      }
+    }
+    //We should be running under node.js.
+    else if(typeof window === 'undefined' && require) {
+      var net = require("net");
+      var client;
+      this._connect = function(serverName, port, cb) {
+        var self = this;
+        client = net.connect({port: port, host: serverName}, cb);
+        client.on('data', self._callReadForever);
+
+        //FIXME: Need to pass result code to onDisconnected.
+        client.on('error', self.onDisconnected);
+        client.on('close', self.onDisconnected);
+        client.on('end', self.onDisconnected);
+      }.bind(this);
+      this._write = function(string, func) {
+        client.write(string, func);
+      }
+      this._read = function(data) {
+        //...we don't get to manually schedule reads on our own. Grr.
+        //So, we just do nothing and let the node.js event handling
+        //schedule our eternal reads...
+      }
+      this._disconnect = function() {
+        client.end();
+      }
+      this._callReadForever = function(data) {
+        var self = this;
+        //If we've been called, we have data, without error,
+        //so setting resultCode to >0 is okay.
+        var readInfo = { resultCode: 1, data: data};
+        self.readForever(readInfo);
+      }.bind(this);
+    }
   }
-  return buf;
-}
 
-IrcClient.ab2str = function(buf) {
-  return String.fromCharCode.apply(null, new Uint8Array(buf));
-}
-
-//Converts a single message from an IRC server into an IrcCommand object.
-IrcClient.crackMessage = function(serverLine) {
-  if(serverLine.length === 0)
-  {
-    return undefined;
+  public static str2ab(str : string) : ArrayBuffer { 
+    var buf = new ArrayBuffer(str.length*1); // 1 byte for each char
+    var bufView = new Uint8Array(buf);
+    for (var i=0, strLen=str.length; i<strLen; i++)
+    {
+      bufView[i] = str.charCodeAt(i);
+    }
+    return buf;
   }
-  var r = new IrcCommand();
-  var parts = serverLine.split(" ");
-  var offset = 0;
 
-  //If our message had a prefix, store it.
-  if(parts[0].charAt(0) == ":" )
-  {
-    r.prefix = parts[0];
-    offset = 1;
+  public static ab2str (buf : ArrayBuffer) : string {
+    return String.fromCharCode.apply(null, new Uint8Array(buf));
   }
-  r.command = parts[0+offset];
-  r.username = parts[1+offset];
-  r.args = parts.slice(2+offset);
-  return r;
-}
 
-//@returns true if we're both running in an browser, and running under Google
-//Chrome, and have access to Chrome Storage.
-IrcClient.runningInChrome = function() {
-  if(typeof window === "undefined") return false;
-  return (window.chrome && chrome && chrome.storage);
+  //Converts a single message from an IRC server into an IrcCommand object.
+  public static crackMessage (serverLine : string) : IrcCommand {
+    if(serverLine.length === 0)
+    {
+      return undefined;
+    }
+    var r = new IrcCommand();
+    var parts = serverLine.split(" ");
+    var offset = 0;
+
+    //If our message had a prefix, store it.
+    if(parts[0].charAt(0) == ":" )
+    {
+      r.prefix = parts[0];
+      offset = 1;
+    }
+    r.command = parts[0+offset];
+    r.username = parts[1+offset];
+    r.args = parts.slice(2+offset);
+    return r;
+  }
+
+  //@returns true if we're both running in an browser, and running under Google
+  //Chrome, and have access to Chrome Storage.
+  public static runningInChrome() : bool {
+    if(typeof window === "undefined") return false;
+    return (window.chrome && chrome && chrome.storage);
+  }
 }
 
 IrcClient.prototype.write = function(s, f) {
