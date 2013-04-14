@@ -33,7 +33,7 @@ class OptimistBot {
         this.serverName, this.serverPort, 
         this.userName, this.channelName)
 
-    this.timeOfLastChanMsg.setTime(1), //initialize the time to 1.
+    this.timeOfLastChanMsg.setTime(1); //initialize the time to 1.
     this.client.onConnect = OptimistBot.onConnected;
     this.client.onDisconnect = OptimistBot.onDisconnected;
     this.client.onMessages = this.handleOptimistMessages.bind(this);
@@ -92,7 +92,7 @@ class OptimistBot {
     }
   }
 
-  private handleOptimistMessages (serverMessages) {
+  private handleOptimistMessages (serverMessages : IrcCommand[]) {
     for(var i = 0; i < serverMessages.length; ++i)
     {
       var m = serverMessages[i];
